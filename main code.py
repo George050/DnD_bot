@@ -10,7 +10,7 @@ dp = Dispatcher(bot)
 
 books = {'-руководство мастера': 'Dungeon Masters Guide - Руководство Мастера RUS 5e .pdf',
          '-книга игрока': 'Players Handbook - Книга игрока RUS 5e .pdf',
-         '-бестиарий': 'Monsters Manual - Бестиарий RUS 5e .pdf',
+         '-бестиарий': 'Monsters Manual - Бестиарий RUS 5e .rar',
          '-справочник по монстрам': 'Volo_s Guide to Monsters RUS.pdf'}
 
 
@@ -20,14 +20,15 @@ async def send_welcome(message: types.Message):
                                 '-книга игрока \n'
                                 '-руководство мастера \n'
                                 '-бестиарий \n'
-                                '-справочник по монстрам \n')
+                                '-справочник по монстрам')
 
 @dp.message_handler(content_types=["text"])
 async def get_text_messages(message: types.Message):
     if message.text in books:
         await message.answer("Подождите минутку")
-        await message.answer_animation(open("fff.gif", 'rb'))
+        await message.answer_animation(open("truck.gif", 'rb'))
         await message.answer_document(open("books\{}".format(books[message.text]), 'rb'))
+        await message.answer_animation(open("fff.gif", 'rb'))
     else:
         await message.answer("Команда не распознана, напишите /help")
 

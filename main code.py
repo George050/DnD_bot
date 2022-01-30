@@ -14,7 +14,7 @@ def start(m, res=False):
 
 @bot.message_handler(content_types=["text"])
 def handle_text(message):
-
-    bot.send_message(message.chat.id, 'Я неготов, поэтому выведу вам это: \n Вы написали: ' + message.text)
+    bot.send_message(message.chat.id, "Подождите минутку")
+    bot.send_document(message.chat.id, document=open("books\Dungeon Masters Guide - Руководство Мастера RUS 5e .pdf", 'rb'))
 
 bot.polling(none_stop=True, interval=0)

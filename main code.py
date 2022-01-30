@@ -1,3 +1,6 @@
+import random
+
+
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
@@ -13,20 +16,58 @@ books = {'-руководство мастера': 'Dungeon Masters Guide - Ру
          '-бестиарий': 'Monsters Manual - Бестиарий RUS 5e .pdf',
          '-справочник по монстрам': 'Volo_s Guide to Monsters RUS.pdf'}
 
+dices = ['d2', 'd3', 'd4', 'd6', 'd8', 'd10', 'd20', 'd100']
+
+
+class Dices:
+    def __init__(self, dice, quantity, bonus):
+        self.dice = dice
+        self.quantity = int(quantity)
+        self.bonus = bonus
+
+    def get_roll(self):
+        dice_number = int(self.dice[1:])
+        if "-" in self.bonus:
+            bonus_number = -(int(self.bonus[1:]))
+        elif "+" in self.bonus:
+            bonus_number = int(self.bonus[1:])
+        else:
+            bonus_number = int(self.bonus)
+        result = int(bonus_number)
+        for i in range(self.quantity):
+            result += random.randint(1, dice_number)
+        return result
+
 
 @dp.message_handler(commands=['start', 'help'])
-async def send_welcome(message: types.Message):
-    await message.reply('Мы можем отправить вам основную документацию. Для этого напишите: \n'
-                                '-книга игрока \n'
-                                '-руководство мастера \n'
-                                '-бестиарий \n'
-                                '-справочник по монстрам \n')
+async def start_and_help(message: types.Message):
+    await message.reply('Функции бота: \n'
+                        '/книги\n'
+                        '/бросить_кости')
+
+@dp.message_handler(commands=['книги'])
+async def send_books(message: types.Message):
+    await message.answer('-книга игрока \n'
+                         '-руководство мастера \n'
+                         '-бестиарий \n'
+                         '-справочник по монстрам')
+
+@dp.message_handler(commands=['бросить_кости'])
+async def roll_dice(message: types.Message):
+    await message.answer('Выберите кость: \n /d2\n /d3\n /d4\n /d6\n /d8\n /d10\n /d20\n /d100')
+    @dp.message_handler(commands=dices)
+    async def get_quantity(message: types.Message):
+        await message.answer('Укажите количество бросков (напишите число больше 0)')
+      #  @dp.message_handler(content_types=["text"])
+      #  async def get_messages(message: types.Message):
+       #     if message.text in books:
+
 
 @dp.message_handler(content_types=["text"])
-async def get_text_messages(message: types.Message):
+async def get_messages(message: types.Message):
     if message.text in books:
         await message.answer("Подождите минутку")
-        await message.answer_animation(open("truck.gif", 'rb'))
+        await message.answer_animation(open("fff.gif", 'rb'))
         await message.answer_document(open("books\{}".format(books[message.text]), 'rb'))
     else:
         await message.answer("Команда не распознана, напишите /help")

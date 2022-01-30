@@ -1,7 +1,12 @@
-import telebot
+from aiogram import Bot, types
+from aiogram.dispatcher import Dispatcher
+from aiogram.utils import executor
 
 
-bot = telebot.TeleBot('5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8')
+TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
+
 
 books = {'-руководство мастера': 'Dungeon Masters Guide - Руководство Мастера RUS 5e .pdf',
          '-книга игрока': 'Players Handbook - Книга игрока RUS 5e .pdf',
@@ -9,21 +14,23 @@ books = {'-руководство мастера': 'Dungeon Masters Guide - Ру
          '-справочник по монстрам': 'Volo_s Guide to Monsters RUS.pdf'}
 
 
-@bot.message_handler(commands=["start", "help"])
-def start(m, res=False):
-    bot.send_message(m.chat.id, 'Мы можем отправить вам основную документацию. Для этого напишите: \n'
+@dp.message_handler(commands=['start', 'help'])
+async def send_welcome(message: types.Message):
+    await message.reply('Мы можем отправить вам основную документацию. Для этого напишите: \n'
                                 '-книга игрока \n'
                                 '-руководство мастера \n'
                                 '-бестиарий \n'
                                 '-справочник по монстрам \n')
 
-@bot.message_handler(content_types=["text"])
-def handle_text(message):
+@dp.message_handler(content_types=["text"])
+async def get_text_messages(message: types.Message):
     if message.text in books:
-        bot.send_message(message.chat.id, "Подождите минутку")
-        bot.send_animation(message.chat.id, open("truck.gif", 'rb'))
-        bot.send_document(message.chat.id, open("books\{}".format(books[message.text]), 'rb'))
+        await message.answer("Подождите минутку")
+        await message.answer_animation(open("truck.gif", 'rb'))
+        await message.answer_document(open("books\{}".format(books[message.text]), 'rb'))
     else:
-        bot.send_message(message.chat.id, "Команда не распознана, напишите /help")
+        await message.answer("Команда не распознана, напишите /help")
 
-bot.polling(none_stop=True, interval=0)
+if __name__ == "__main__":
+    # Запуск бота
+    executor.start_polling(dp, skip_updates=True)

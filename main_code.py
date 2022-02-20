@@ -6,7 +6,7 @@ from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
 from dices_code import Dices
 from Docum import classes_info, books
-from Hero import hero_name, hero
+from Hero import hero
 
 TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
@@ -17,6 +17,7 @@ cur = con.cursor()
 
 do = """SELECT name FROM character_profile"""
 names = cur.execute(do).fetchall()
+command_names = ["-"+(i[0]) for i in names]
 
 dice_flag = False
 current_dice = ''
@@ -24,11 +25,15 @@ classes = ['бард', 'варвар', 'воин', 'волшебник', 'дру
            'следопыт', 'чародей']
 
 dices = ['d2', 'd3', 'd4', 'd6', 'd8', 'd10', 'd20', 'd100']
+stats_names = ["сила", "ловкость", "телосложение", "интеллект", "мудрость", "харизма"]
 
 
 @dp.message_handler(commands=['start', 'help'])
 async def start_and_help(message: types.Message):
-    await message.reply('Функции бота: \n/books \n/roll_dice \n/choose_profile \n/create_profile \n/classes')
+    await message.reply('Функции бота: \n/books - Книги по D&D \n/roll_dice - Бросить кости \n/choose_profile - Выбрать'
+                        ' профиль для изменения вашего героя или просмотра его характеристик\n/create_profile - Создать'
+                        ' нового героя\n/classes - Просмотр всех классов\n'
+                        '/stop - Остановка всех функций')
 
 
 @dp.message_handler(commands=['books'])
@@ -43,6 +48,14 @@ async def send_books(message: types.Message):
 @dp.message_handler(commands=['roll_dice'])
 async def roll_dice(message: types.Message):
     await message.answer('Выберите кость: \n/d2\n/d3\n/d4\n/d6\n/d8\n/d10\n/d20\n/d100')
+
+
+@dp.message_handler(commands=['stop'])
+async def stop(message: types.Message):
+    global dice_flag
+    if dice_flag:
+        dice_flag = False
+        await message.reply('Была прекращена функция /roll_dice')
 
 
 @dp.message_handler(commands=dices)
@@ -62,14 +75,15 @@ async def choose_profile(message: types.Message):
         await message.answer("К сожалению, на данный момент в базе данных нет никаких персонажей( \nХотите его "
                              "создать?\n/create_profile")
     else:
-        await message.answer("Чтобы выбрать героя введите его имя через слэш")
+        await message.answer("Чтобы выбрать героя введите его имя через тире '-'")
         for i in range(len(heroes)):
-            await message.answer("/{} {} {} {} уровня".format(heroes[i][0], heroes[i][1], heroes[i][2], heroes[i][3]))
+            await message.answer("-{} {} {} {} уровня".format(heroes[i][0], heroes[i][1], heroes[i][2], heroes[i][3]))
+        await message.answer("Если хотите создать нового персонажа напишите\n/create_profile")
 
 
 @dp.message_handler(commands=["create_profile"])
 async def create_profile(message: types.Message):
-    global names
+    global names, command_names
     do = """SELECT name FROM character_profile"""
     names = cur.execute(do).fetchall()
     text = message.text.split()
@@ -94,13 +108,11 @@ async def create_profile(message: types.Message):
                                                   text[3])
             cur.execute(do)
             con.commit()
-            await message.answer("Ваш персонаж успешно создан и сохранен в базе данных!\n Вы можете его выбрать, введя команду\n/choose_profile")
-
-
-@dp.message_handler(commands=[i[0] for i in names])
-async def hero_choose(message: types.Message):
-    hero(name=message.text[1:])
-    await message.answer("Выбран герой {}".format(message.text[1:]))
+            await message.answer("Ваш персонаж успешно создан и сохранен в базе данных!\nВы можете его выбрать,"
+                                 " введя команду\n/choose_profile")
+    do = """SELECT name FROM character_profile"""
+    names = cur.execute(do).fetchall()
+    command_names = ["-"+(i[0]) for i in names]
 
 
 @dp.message_handler(commands=["classes"])
@@ -109,11 +121,93 @@ async def classes_list(message: types.Message):
     await message.answer("Введите название любого класса, чтобы получить информацию о нем")
 
 
+@dp.message_handler(commands=["stats_get"])
+async def stats_get(message: types.Message):
+    if hero() == "":
+        await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
+    else:
+        answer = []
+        do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero())
+        if cur.execute(do).fetchall()[0][0] != None:
+            stats = cur.execute(do).fetchall()[0][0].split()
+            for i in range(6):
+                if ((int(stats[i]) - 10) // 2) >= 0:
+                    answer.append("{} = {}(+{})".format(stats_names[i], stats[i], ((int(stats[i]) - 10) // 2)))
+                else:
+                    answer.append("{} = {}({})".format(stats_names[i], stats[i], ((int(stats[i]) - 10) // 2)))
+            await message.answer("\n".join(answer))
+        else:
+            await message.answer("У вашего персонажа не записаны характеристики, вы можете сделать это при "
+                                 "помощи\n/stats_roll")
+
+
+@dp.message_handler(commands=["stats_change"])
+async def stats_change(message: types.Message):
+    if hero() == "":
+        await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
+    else:
+        do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero())
+        if cur.execute(do).fetchall()[0][0] != None:
+            text = message.text.split()
+            if len(text) != 3:
+                await message.answer("Чтобы изменить статы вашего героя, введите:\n/stats_change *характеристика* "
+                                     "*количество очков*\n/stats_change сила 2\n/stats_change ловкость -1")
+            else:
+                if text[1] in stats_names:
+                    if "-" in text[2]:
+                        bonus_number = -(int(text[2][1:]))
+                    elif "+" in text[2]:
+                        bonus_number = int(text[2][1:])
+                    else:
+                        bonus_number = int(text[2])
+                    do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero())
+                    stats = cur.execute(do).fetchall()[0][0].split()
+                    stats[stats_names.index(text[1])] = str(int(stats[stats_names.index(text[1])]) + bonus_number)
+                    do = """UPDATE character_profile SET stats = '{}' WHERE name = '{}'""".format(" ".join(stats), hero())
+                    cur.execute(do)
+                    if bonus_number >= 0:
+                        await message.answer("Параметр '{}' увеличен на {}\n{} = "
+                                             "{}".format(text[1], text[2], text[1], stats[stats_names.index(text[1])]))
+                    else:
+                        await message.answer("Параметр '{}' уменьшен на {}\n{} = "
+                                             "{}".format(text[1], text[2], text[1], stats[stats_names.index(text[1])]))
+                    con.commit()
+        else:
+            await message.answer("У вашего персонажа не записаны характеристики, вы можете сделать это при "
+                                 "помощи\n/stats_roll")
+
+
+@dp.message_handler(commands=["stats_roll"])
+async def stats_roll(message: types.Message):
+    if hero() == "":
+        await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
+    else:
+        stats = []
+        dice_class = Dices(6, 4, 0)
+        for i in range(6):
+            stats.append(dice_class.create_stats())
+        answer = []
+        for i in range(6):
+            if stats[i][1] >= 0:
+                answer.append("{} = {}(+{})".format(stats_names[i], stats[i][0], stats[i][1]))
+            else:
+                answer.append("{} = {}({})".format(stats_names[i], stats[i][0], stats[i][1]))
+        await message.answer("\n".join(answer))
+        stats_in_db = " ".join(str(i[0]) for i in stats)
+        do = """UPDATE character_profile set stats = '{}' WHERE name = '{}'""".format(stats_in_db, hero())
+        cur.execute(do)
+        con.commit()
+
+
 @dp.message_handler(content_types=["text"])
 async def get_messages(message: types.Message):
-    global current_dice
+    global current_dice, command_names
     global dice_flag
-    if dice_flag:
+    if message.text in command_names:
+        hero(name=message.text[1:])
+        await message.answer("Выбран герой {}\nТеперь вам дотсупны команды:\n"
+                             "/stats_get\n/stats_change\n/stats_roll".format(message.text[1:]))
+    elif dice_flag:
         text = message.text.split(' ')
         try:
             if int(text[0]) > 0:

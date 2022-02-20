@@ -34,3 +34,11 @@ class Dices:
         all_numbers += "\n<u>{}</u>".format(result)
         return all_numbers
 
+    def create_stats(self):
+        res = []
+        for i in range(4):
+            res.append(random.randint(1, 6))
+        res.sort()
+        summ = res[-1] + res[-2] + res[-3]
+        return [summ, (summ - 10) // 2]
+

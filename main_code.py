@@ -103,7 +103,7 @@ async def create_profile(message: types.Message):
             await message.answer("Такое имя уже существует, введите другое")
         else:
             do = """INSERT INTO character_profile(name, class, species, level) 
-            VALUES('{}', '{}', '{}', 0)""".format(text[1],
+            VALUES('{}', '{}', '{}', 1)""".format(text[1],
                                                   text[2].lower(),
                                                   text[3])
             cur.execute(do)
@@ -163,15 +163,20 @@ async def stats_change(message: types.Message):
                     do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero())
                     stats = cur.execute(do).fetchall()[0][0].split()
                     stats[stats_names.index(text[1])] = str(int(stats[stats_names.index(text[1])]) + bonus_number)
-                    do = """UPDATE character_profile SET stats = '{}' WHERE name = '{}'""".format(" ".join(stats), hero())
-                    cur.execute(do)
-                    if bonus_number >= 0:
-                        await message.answer("Параметр '{}' увеличен на {}\n{} = "
-                                             "{}".format(text[1], text[2], text[1], stats[stats_names.index(text[1])]))
+                    if int(stats[stats_names.index(text[1])]) > 30:
+                        await message.answer("Параметр не может быть выше 30")
+                    elif int(stats[stats_names.index(text[1])]) <= 0:
+                        await message.answer("Параметр не может быть ниже 1")
                     else:
-                        await message.answer("Параметр '{}' уменьшен на {}\n{} = "
-                                             "{}".format(text[1], text[2], text[1], stats[stats_names.index(text[1])]))
-                    con.commit()
+                        do = """UPDATE character_profile SET stats = '{}' WHERE name = '{}'""".format(" ".join(stats), hero())
+                        cur.execute(do)
+                        if bonus_number >= 0:
+                            await message.answer("Параметр '{}' увеличен на {}\n{} = "
+                                                 "{}".format(text[1], text[2], text[1], stats[stats_names.index(text[1])]))
+                        else:
+                            await message.answer("Параметр '{}' уменьшен на {}\n{} = "
+                                                 "{}".format(text[1], text[2], text[1], stats[stats_names.index(text[1])]))
+                        con.commit()
         else:
             await message.answer("У вашего персонажа не записаны характеристики, вы можете сделать это при "
                                  "помощи\n/stats_roll")
@@ -199,6 +204,34 @@ async def stats_roll(message: types.Message):
         con.commit()
 
 
+@dp.message_handler(commands=["stats_lvlup", "stats_lvldown"])
+async def level_up_down(message: types.Message):
+    if hero() == "":
+        await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
+    else:
+        do = """SELECT level FROM character_profile WHERE name = '{}'""".format(hero())
+        lvl = cur.execute(do).fetchall()[0][0]
+        if "up" in message.text:
+            lvl += 1
+            if lvl > 20:
+                await message.answer("Уровень не может быть выше 20")
+                lvl -= 1
+            else:
+                await message.answer("Уровень повышен на 1 единицу"
+                                     "\nНынешний уровень персонажа \n{} - {}".format(hero(), lvl))
+        elif "down" in message.text:
+            lvl -= 1
+            if lvl < 1:
+                await message.answer("Уровень не может быть ниже 1")
+                lvl += 1
+            else:
+                await message.answer("Уровень повышен на 1 единицу"
+                                     "\nНынешний уровень персонажа \n{} - {}".format(hero(), lvl))
+        do = """UPDATE character_profile SET level = {} WHERE name = '{}'""".format(lvl, hero())
+        cur.execute(do)
+        con.commit()
+
+
 @dp.message_handler(content_types=["text"])
 async def get_messages(message: types.Message):
     global current_dice, command_names
@@ -206,7 +239,7 @@ async def get_messages(message: types.Message):
     if message.text in command_names:
         hero(name=message.text[1:])
         await message.answer("Выбран герой {}\nТеперь вам дотсупны команды:\n"
-                             "/stats_get\n/stats_change\n/stats_roll".format(message.text[1:]))
+                             "/stats_get\n/stats_change\n/stats_roll\n/stats_lvlup\n/stats_lvldown".format(message.text[1:]))
     elif dice_flag:
         text = message.text.split(' ')
         try:

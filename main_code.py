@@ -4,9 +4,11 @@ import sqlite3
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from dices_code import Dices
 from Docum import classes_info, books
 from Hero import hero
+from KeyBoard import books_kb
 
 TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
@@ -18,6 +20,9 @@ cur = con.cursor()
 do = """SELECT name FROM character_profile"""
 names = cur.execute(do).fetchall()
 command_names = ["-"+(i[0]) for i in names]
+names_kb = ReplyKeyboardMarkup(one_time_keyboard=True)
+for i in command_names:
+    names_kb.add(KeyboardButton(i))
 
 dice_flag = False
 current_dice = ''
@@ -42,7 +47,7 @@ async def send_books(message: types.Message):
                          'книга игрока \n'
                          'руководство мастера \n'
                          'бестиарий \n'
-                         'справочник по монстрам')
+                         'справочник по монстрам', reply_markup=books_kb)
 
 
 @dp.message_handler(commands=['roll_dice'])
@@ -75,7 +80,7 @@ async def choose_profile(message: types.Message):
         await message.answer("К сожалению, на данный момент в базе данных нет никаких персонажей( \nХотите его "
                              "создать?\n/create_profile")
     else:
-        await message.answer("Чтобы выбрать героя введите его имя через тире '-'")
+        await message.answer("Чтобы выбрать героя введите его имя через тире '-'", reply_markup=names_kb)
         for i in range(len(heroes)):
             await message.answer("-{} {} {} {} уровня".format(heroes[i][0], heroes[i][1], heroes[i][2], heroes[i][3]))
         await message.answer("Если хотите создать нового персонажа напишите\n/create_profile")
@@ -83,7 +88,7 @@ async def choose_profile(message: types.Message):
 
 @dp.message_handler(commands=["create_profile"])
 async def create_profile(message: types.Message):
-    global names, command_names
+    global names, command_names, names_kb
     do = """SELECT name FROM character_profile"""
     names = cur.execute(do).fetchall()
     text = message.text.split()
@@ -113,6 +118,9 @@ async def create_profile(message: types.Message):
     do = """SELECT name FROM character_profile"""
     names = cur.execute(do).fetchall()
     command_names = ["-"+(i[0]) for i in names]
+    names_kb = ReplyKeyboardMarkup(one_time_keyboard=True)
+    for i in command_names:
+        names_kb.add(KeyboardButton(i))
 
 
 @dp.message_handler(commands=["classes"])

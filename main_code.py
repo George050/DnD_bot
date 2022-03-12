@@ -8,7 +8,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from dices_code import Dices
 from Docum import classes_info, books
 from Hero import hero
-from KeyBoard import books_kb
+from KeyBoard import books_kb, dices_kb, classes_kb, main_func_kb, hero_func_kb
 
 TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
@@ -20,7 +20,7 @@ cur = con.cursor()
 do = """SELECT name FROM character_profile"""
 names = cur.execute(do).fetchall()
 command_names = ["-"+(i[0]) for i in names]
-names_kb = ReplyKeyboardMarkup(one_time_keyboard=True)
+names_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 for i in command_names:
     names_kb.add(KeyboardButton(i))
 
@@ -38,7 +38,7 @@ async def start_and_help(message: types.Message):
     await message.reply('Функции бота: \n/books - Книги по D&D \n/roll_dice - Бросить кости \n/choose_profile - Выбрать'
                         ' профиль для изменения вашего героя или просмотра его характеристик\n/create_profile - Создать'
                         ' нового героя\n/classes - Просмотр всех классов\n'
-                        '/stop - Остановка всех функций')
+                        '/stop - Остановка всех функций', reply_markup=main_func_kb)
 
 
 @dp.message_handler(commands=['books'])
@@ -52,7 +52,7 @@ async def send_books(message: types.Message):
 
 @dp.message_handler(commands=['roll_dice'])
 async def roll_dice(message: types.Message):
-    await message.answer('Выберите кость: \n/d2\n/d3\n/d4\n/d6\n/d8\n/d10\n/d20\n/d100')
+    await message.answer('Выберите кость: \n/d2\n/d3\n/d4\n/d6\n/d8\n/d10\n/d20\n/d100', reply_markup=dices_kb)
 
 
 @dp.message_handler(commands=['stop'])
@@ -125,7 +125,7 @@ async def create_profile(message: types.Message):
 
 @dp.message_handler(commands=["classes"])
 async def classes_list(message: types.Message):
-    await message.answer("\n".join(classes))
+    await message.answer("Существующие классы: \n{}".format("\n".join(classes)), reply_markup=classes_kb)
     await message.answer("Введите название любого класса, чтобы получить информацию о нем")
 
 
@@ -246,8 +246,8 @@ async def get_messages(message: types.Message):
     global dice_flag
     if message.text in command_names:
         hero(name=message.text[1:])
-        await message.answer("Выбран герой {}\nТеперь вам дотсупны команды:\n"
-                             "/stats_get\n/stats_change\n/stats_roll\n/stats_lvlup\n/stats_lvldown".format(message.text[1:]))
+        await message.answer("Выбран герой {}\nТеперь вам доступны команды:\n"
+                             "/stats_get\n/stats_change\n/stats_roll\n/stats_lvlup\n/stats_lvldown".format(message.text[1:]), reply_markup=hero_func_kb)
     elif dice_flag:
         text = message.text.split(' ')
         try:

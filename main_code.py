@@ -8,7 +8,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from dices_code import Dices
 from Docum import classes_info, books
 from Hero import hero
-from KeyBoard import books_kb, dices_kb, classes_kb, main_func_kb, hero_func_kb
+from KeyBoard import books_kb, dices_kb, classes_kb, main_func_kb, hero_func_kb, yes_or_no_kb
 
 TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
@@ -25,6 +25,7 @@ for i in command_names:
     names_kb.add(KeyboardButton(i))
 
 dice_flag = False
+delete_flag = False
 current_dice = ''
 classes = ['бард', 'варвар', 'воин', 'волшебник', 'друид', 'жрец', 'изобретатель', 'колдун', 'монах', 'паладин', 'плут',
            'следопыт', 'чародей']
@@ -57,10 +58,13 @@ async def roll_dice(message: types.Message):
 
 @dp.message_handler(commands=['stop'])
 async def stop(message: types.Message):
-    global dice_flag
+    global dice_flag, delete_flag
     if dice_flag:
         dice_flag = False
         await message.reply('Была прекращена функция /roll_dice')
+    elif delete_flag:
+        delete_flag = False
+        await message.reply('Была прекращена функция /delete_flag')
 
 
 @dp.message_handler(commands=dices)
@@ -74,8 +78,12 @@ async def get_quantity(message: types.Message):
 
 @dp.message_handler(commands=["choose_profile"])
 async def choose_profile(message: types.Message):
+    global names_kb
     do = """SELECT * FROM character_profile"""
     heroes = cur.execute(do).fetchall()
+    names_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    for i in command_names:
+        names_kb.add(KeyboardButton(i))
     if heroes == []:
         await message.answer("К сожалению, на данный момент в базе данных нет никаких персонажей( \nХотите его "
                              "создать?\n/create_profile")
@@ -240,14 +248,21 @@ async def level_up_down(message: types.Message):
         con.commit()
 
 
+@dp.message_handler(commands=['delete_profile'])
+async def delete_profile(message: types.Message):
+    global delete_flag
+    await message.reply("Вы точно хотите удалить этот профиль?\nДа или Нет", reply_markup=yes_or_no_kb)
+    delete_flag = True
+
+
 @dp.message_handler(content_types=["text"])
 async def get_messages(message: types.Message):
-    global current_dice, command_names
-    global dice_flag
+    global current_dice, names, command_names
+    global dice_flag, delete_flag
     if message.text in command_names:
         hero(name=message.text[1:])
         await message.answer("Выбран герой {}\nТеперь вам доступны команды:\n"
-                             "/stats_get\n/stats_change\n/stats_roll\n/stats_lvlup\n/stats_lvldown".format(message.text[1:]), reply_markup=hero_func_kb)
+                             "/stats_get\n/stats_change\n/stats_roll\n/stats_lvlup\n/stats_lvldown\n/delete_profile".format(message.text[1:]), reply_markup=hero_func_kb)
     elif dice_flag:
         text = message.text.split(' ')
         try:
@@ -257,6 +272,24 @@ async def get_messages(message: types.Message):
                 dice_flag = False
         except BaseException:
             dice_flag = True
+    elif delete_flag:
+        text = message.text
+        if text.lower() == "да":
+            do = """DELETE FROM character_profile WHERE name = '{}'""".format(hero())
+            cur.execute(do)
+            con.commit()
+            await message.reply("Персонаж {} успешно удален".format(hero()))
+            hero(123)
+            delete_flag = False
+            do = """SELECT name FROM character_profile"""
+            names = cur.execute(do).fetchall()
+            command_names = ["-" + (i[0]) for i in names]
+        elif text.lower() == 'нет':
+            await message.reply("Персонаж не будет удален")
+            delete_flag = False
+        else:
+            await message.reply("Да или нет", reply_markup=yes_or_no_kb)
+
     elif message.text in books:
         await message.answer("Подождите минутку")
         await message.answer_animation(open("truck.gif", 'rb'))

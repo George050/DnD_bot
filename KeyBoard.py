@@ -21,7 +21,10 @@ main_func_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 for i in main_func:
     main_func_kb.add(i)
 
-hero_func = ['/stats_get', '/stats_change', '/stats_roll', '/stats_lvlup', '/stats_lvldown', '/stop']
+hero_func = ['/stats_get', '/stats_change', '/stats_roll', '/stats_lvlup', '/stats_lvldown', '/delete_profile', '/stop']
 hero_func_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 for i in hero_func:
     hero_func_kb.add(i)
+
+yes_or_no_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+yes_or_no_kb.add(KeyboardButton("Да"), KeyboardButton("Нет"))

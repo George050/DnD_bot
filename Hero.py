@@ -1,7 +1,7 @@
 hero_name = ""
 
 
-def hero(name=""):
+async def hero(name=""):
     global hero_name
     if name == "":
         return hero_name

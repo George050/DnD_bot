@@ -139,11 +139,11 @@ async def classes_list(message: types.Message):
 
 @dp.message_handler(commands=["stats_get"])
 async def stats_get(message: types.Message):
-    if hero() == "":
+    if hero(message.from_user.id) == "":
         await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
     else:
         answer = []
-        do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero())
+        do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
         if cur.execute(do).fetchall()[0][0] != None:
             stats = cur.execute(do).fetchall()[0][0].split()
             for i in range(6):
@@ -159,10 +159,10 @@ async def stats_get(message: types.Message):
 
 @dp.message_handler(commands=["stats_change"])
 async def stats_change(message: types.Message):
-    if hero() == "":
+    if hero(message.from_user.id) == "":
         await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
     else:
-        do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero())
+        do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
         if cur.execute(do).fetchall()[0][0] != None:
             text = message.text.split()
             if len(text) != 3:
@@ -176,7 +176,7 @@ async def stats_change(message: types.Message):
                         bonus_number = int(text[2][1:])
                     else:
                         bonus_number = int(text[2])
-                    do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero())
+                    do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
                     stats = cur.execute(do).fetchall()[0][0].split()
                     stats[stats_names.index(text[1])] = str(int(stats[stats_names.index(text[1])]) + bonus_number)
                     if int(stats[stats_names.index(text[1])]) > 30:
@@ -184,7 +184,7 @@ async def stats_change(message: types.Message):
                     elif int(stats[stats_names.index(text[1])]) <= 0:
                         await message.answer("Параметр не может быть ниже 1")
                     else:
-                        do = """UPDATE character_profile SET stats = '{}' WHERE name = '{}'""".format(" ".join(stats), hero())
+                        do = """UPDATE character_profile SET stats = '{}' WHERE name = '{}'""".format(" ".join(stats), hero(message.from_user.id))
                         cur.execute(do)
                         if bonus_number >= 0:
                             await message.answer("Параметр '{}' увеличен на {}\n{} = "
@@ -200,7 +200,7 @@ async def stats_change(message: types.Message):
 
 @dp.message_handler(commands=["stats_roll"])
 async def stats_roll(message: types.Message):
-    if hero() == "":
+    if hero(message.from_user.id) == "":
         await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
     else:
         stats = []
@@ -215,17 +215,17 @@ async def stats_roll(message: types.Message):
                 answer.append("{} = {}({})".format(stats_names[i], stats[i][0], stats[i][1]))
         await message.answer("\n".join(answer))
         stats_in_db = " ".join(str(i[0]) for i in stats)
-        do = """UPDATE character_profile set stats = '{}' WHERE name = '{}'""".format(stats_in_db, hero())
+        do = """UPDATE character_profile set stats = '{}' WHERE name = '{}'""".format(stats_in_db, hero(message.from_user.id))
         cur.execute(do)
         con.commit()
 
 
 @dp.message_handler(commands=["stats_lvlup", "stats_lvldown"])
 async def level_up_down(message: types.Message):
-    if hero() == "":
+    if hero(message.from_user.id) == "":
         await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
     else:
-        do = """SELECT level FROM character_profile WHERE name = '{}'""".format(hero())
+        do = """SELECT level FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
         lvl = cur.execute(do).fetchall()[0][0]
         if "up" in message.text:
             lvl += 1
@@ -234,7 +234,7 @@ async def level_up_down(message: types.Message):
                 lvl -= 1
             else:
                 await message.answer("Уровень повышен на 1 единицу"
-                                     "\nНынешний уровень персонажа \n{} - {}".format(hero(), lvl))
+                                     "\nНынешний уровень персонажа \n{} - {}".format(hero(message.from_user.id), lvl))
         elif "down" in message.text:
             lvl -= 1
             if lvl < 1:
@@ -242,8 +242,8 @@ async def level_up_down(message: types.Message):
                 lvl += 1
             else:
                 await message.answer("Уровень повышен на 1 единицу"
-                                     "\nНынешний уровень персонажа \n{} - {}".format(hero(), lvl))
-        do = """UPDATE character_profile SET level = {} WHERE name = '{}'""".format(lvl, hero())
+                                     "\nНынешний уровень персонажа \n{} - {}".format(hero(message.from_user.id), lvl))
+        do = """UPDATE character_profile SET level = {} WHERE name = '{}'""".format(lvl, hero(message.from_user.id))
         cur.execute(do)
         con.commit()
 
@@ -260,7 +260,7 @@ async def get_messages(message: types.Message):
     global current_dice, names, command_names
     global dice_flag, delete_flag
     if message.text in command_names:
-        hero(name=message.text[1:])
+        hero(message.from_user.id, name=message.text[1:])
         await message.answer("Выбран герой {}\nТеперь вам доступны команды:\n"
                              "/stats_get\n/stats_change\n/stats_roll\n/stats_lvlup\n/stats_lvldown\n/delete_profile".format(message.text[1:]), reply_markup=hero_func_kb)
     elif dice_flag:
@@ -275,10 +275,10 @@ async def get_messages(message: types.Message):
     elif delete_flag:
         text = message.text
         if text.lower() == "да":
-            do = """DELETE FROM character_profile WHERE name = '{}'""".format(hero())
+            do = """DELETE FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
             cur.execute(do)
             con.commit()
-            await message.reply("Персонаж {} успешно удален".format(hero()))
+            await message.reply("Персонаж {} успешно удален".format(hero(message.from_user.id)))
             hero(123)
             delete_flag = False
             do = """SELECT name FROM character_profile"""

@@ -8,6 +8,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from dices_code import Dices
 from Docum import classes_info, books
 from Hero import hero
+from flags import flags_change
 from KeyBoard import books_kb, dices_kb, classes_kb, main_func_kb, hero_func_kb, yes_or_no_kb
 
 TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
@@ -24,8 +25,7 @@ names_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 for i in command_names:
     names_kb.add(KeyboardButton(i))
 
-dice_flag = False
-delete_flag = False
+
 current_dice = ''
 classes = ['бард', 'варвар', 'воин', 'волшебник', 'друид', 'жрец', 'изобретатель', 'колдун', 'монах', 'паладин', 'плут',
            'следопыт', 'чародей']
@@ -58,20 +58,19 @@ async def roll_dice(message: types.Message):
 
 @dp.message_handler(commands=['stop'])
 async def stop(message: types.Message):
-    global dice_flag, delete_flag
+    dice_flag, delete_flag = flags_change(message.from_user.id)['dice_flag'], flags_change(message.from_user.id)['delete_flag']
     if dice_flag:
-        dice_flag = False
+        flags_change(message.from_user.id, di=False)
         await message.reply('Была прекращена функция /roll_dice')
-    elif delete_flag:
-        delete_flag = False
+    if delete_flag:
+        flags_change(message.from_user.id, de=False)
         await message.reply('Была прекращена функция /delete_flag')
 
 
 @dp.message_handler(commands=dices)
 async def get_quantity(message: types.Message):
     global current_dice
-    global dice_flag
-    dice_flag = True
+    flags_change(message.from_user.id, di=True)
     current_dice = message.text
     await message.answer('Укажите количество бросков и бонус к броску \nПример:\n 3 -5\n 1 +3\n 8 0')
 
@@ -250,15 +249,14 @@ async def level_up_down(message: types.Message):
 
 @dp.message_handler(commands=['delete_profile'])
 async def delete_profile(message: types.Message):
-    global delete_flag
     await message.reply("Вы точно хотите удалить этот профиль?\nДа или Нет", reply_markup=yes_or_no_kb)
-    delete_flag = True
+    flags_change(message.from_user.id, de=True)
 
 
 @dp.message_handler(content_types=["text"])
 async def get_messages(message: types.Message):
     global current_dice, names, command_names
-    global dice_flag, delete_flag
+    dice_flag, delete_flag = flags_change(message.from_user.id)['dice_flag'], flags_change(message.from_user.id)['delete_flag']
     if message.text in command_names:
         hero(message.from_user.id, name=message.text[1:])
         await message.answer("Выбран герой {}\nТеперь вам доступны команды:\n"
@@ -269,9 +267,9 @@ async def get_messages(message: types.Message):
             if int(text[0]) > 0:
                 dice = Dices(current_dice, text[0], text[1])
                 await message.answer(str(dice.get_roll()))
-                dice_flag = False
+                flags_change(message.from_user.id, di=False)
         except BaseException:
-            dice_flag = True
+            flags_change(message.from_user.id, di=True)
     elif delete_flag:
         text = message.text
         if text.lower() == "да":
@@ -280,15 +278,15 @@ async def get_messages(message: types.Message):
             con.commit()
             await message.reply("Персонаж {} успешно удален".format(hero(message.from_user.id)))
             hero(123)
-            delete_flag = False
+            flags_change(message.from_user.id, de=False)
             do = """SELECT name FROM character_profile"""
             names = cur.execute(do).fetchall()
             command_names = ["-" + (i[0]) for i in names]
         elif text.lower() == 'нет':
             await message.reply("Персонаж не будет удален")
-            delete_flag = False
+            flags_change(message.from_user.id, de=False)
         else:
-            await message.reply("Да или нет", reply_markup=yes_or_no_kb)
+            await message.reply("Да или Нет", reply_markup=yes_or_no_kb)
 
     elif message.text in books:
         await message.answer("Подождите минутку")

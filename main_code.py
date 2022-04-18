@@ -260,17 +260,37 @@ async def delete_profile(message: types.Message):
 
 @dp.message_handler(commands=['music_random'])
 async def music_random(message: types.Message):
-    x = random.choice(music_spis)
-    filedata = urlopen(x[0])
+    music = random.choice(music_spis)
+    filedata = urlopen(music[0])
     datatowrite = filedata.read()
-    with open(x[1], 'wb') as f:
+    with open(music[1], 'wb') as f:
         f.write(datatowrite)
-    await message.answer_audio(open(''.join(x[1]), 'rb'))
+    await message.answer_audio(open(''.join(music[1]), 'rb'))
 
 
 @dp.message_handler(commands=['music'])
 async def music(message: types.Message):
-    pass
+    args = message.get_args().split()
+    if args == []:
+        answer = ""
+        count = 1
+        for i in music_spis:
+            answer += "{} - {}\n".format(count, i[1][:-4])
+            count += 1
+        await message.answer(answer)
+        await message.reply("Чтобы получить песню введите команду /music и номер песни в одном сообщении")
+    elif len(args) == 1:
+        try:
+            music = music_spis[int(args[0]) - 1]
+            filedata = urlopen(music[0])
+            datatowrite = filedata.read()
+            with open(music[1], 'wb') as f:
+                f.write(datatowrite)
+            await message.answer_audio(open(''.join(music[1]), 'rb'))
+        except Exception:
+            await message.answer("Номер песни был введен некорректно")
+    else:
+        await message.answer("Если хотите получить песню, введите ее номер одним числом")
 
 
 @dp.message_handler(content_types=["text"])

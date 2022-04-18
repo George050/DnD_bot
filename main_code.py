@@ -1,6 +1,8 @@
+import random
 import sqlite3
 
-
+import requests
+from urllib.request import urlopen
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
 from aiogram.utils import executor
@@ -10,6 +12,7 @@ from Docum import classes_info, books
 from Hero import hero
 from flags import flags_change
 from KeyBoard import books_kb, dices_kb, classes_kb, main_func_kb, hero_func_kb, yes_or_no_kb
+from html_parser import music_spis
 
 TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
@@ -70,6 +73,7 @@ async def stop(message: types.Message):
 @dp.message_handler(commands=dices)
 async def get_quantity(message: types.Message):
     global current_dice
+    flags_change(message.from_user.id)
     flags_change(message.from_user.id, di=True)
     current_dice = message.text
     await message.answer('Укажите количество бросков и бонус к броску \nПример:\n 3 -5\n 1 +3\n 8 0')
@@ -153,6 +157,7 @@ async def stats_get(message: types.Message):
             await message.answer("\n".join(answer))
         else:
             await message.answer("У вашего персонажа не записаны характеристики, вы можете сделать это при "
+                 
                                  "помощи\n/stats_roll")
 
 
@@ -251,6 +256,21 @@ async def level_up_down(message: types.Message):
 async def delete_profile(message: types.Message):
     await message.reply("Вы точно хотите удалить этот профиль?\nДа или Нет", reply_markup=yes_or_no_kb)
     flags_change(message.from_user.id, de=True)
+
+
+@dp.message_handler(commands=['music_random'])
+async def music_random(message: types.Message):
+    x = random.choice(music_spis)
+    filedata = urlopen(x[0])
+    datatowrite = filedata.read()
+    with open(x[1], 'wb') as f:
+        f.write(datatowrite)
+    await message.answer_audio(open(''.join(x[1]), 'rb'))
+
+
+@dp.message_handler(commands=['music'])
+async def music(message: types.Message):
+    pass
 
 
 @dp.message_handler(content_types=["text"])

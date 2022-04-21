@@ -1,7 +1,6 @@
 import random
 import sqlite3
 
-import requests
 from urllib.request import urlopen
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
@@ -291,16 +290,31 @@ async def music(message: types.Message):
     else:
         await message.answer("Если хотите получить песню, введите ее номер одним числом")
 
+
 @dp.message_handler(commands=['add_spell'])
 async def add_spell(message: types.message):
-    args = message.get_args()
-    if args == '':
-        await message.answer('Для того чтобы добавить заклинание напишите его полное название')
-    elif args not in spell_data:
-        await message.answer('вы напишите пожалуйста правильно! :)')
+    args = message.get_args().capitalize()
+    if hero(message.from_user.id) == '':
+        await message.answer("Чтобы изменять заклинания персонажа, выберете его при помощи /choose_profile")
     else:
-        await message.answer('Вы добавили заклинание {}'.format(args))
-        do = """SELECT spells"""
+        if args == '':
+            await message.answer('Для того чтобы добавить заклинание напишите его полное название')
+        elif args not in spell_data:
+            await message.answer('вы напишите пожалуйста правильно! :)')
+        else:
+            await message.answer('Вы добавили заклинание {}'.format(args))
+            do = """SELECT spells FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
+            chr_spells = cur.execute(do).fetchall()
+            if chr_spells[0][0] == None:
+                spell_req = ','.join([args])
+            else:
+                spells = chr_spells[0][0].split(',')
+                spells.append(args)
+                spell_req = ','.join(spells)
+            do = """UPDATE character_profile SET spells = '{}' WHERE name = '{}'""".format(spell_req, hero(message.from_user.id))
+            cur.execute(do)
+            con.commit()
+
 
 @dp.message_handler(content_types=["text"])
 async def get_messages(message: types.Message):

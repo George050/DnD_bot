@@ -12,7 +12,7 @@ from Docum import classes_info, books
 from Hero import hero
 from flags import flags_change
 from KeyBoard import books_kb, dices_kb, classes_kb, main_func_kb, hero_func_kb, yes_or_no_kb
-from html_parser import music_spis
+from html_parser import music_spis, spell_data
 
 TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)

@@ -295,8 +295,12 @@ async def music(message: types.Message):
 async def add_spell(message: types.message):
     args = message.get_args()
     if args == '':
-        await message.answer('Для того чтобы добавить заклинание напишите его название')
-
+        await message.answer('Для того чтобы добавить заклинание напишите его полное название')
+    elif args not in spell_data:
+        await message.answer('вы напишите пожалуйста правильно! :)')
+    else:
+        await message.answer('Вы добавили заклинание {}'.format(args))
+        do = """SELECT spells"""
 
 @dp.message_handler(content_types=["text"])
 async def get_messages(message: types.Message):

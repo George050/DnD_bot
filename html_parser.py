@@ -22,6 +22,6 @@ for anchor in soup.findAll('a', href=True, title=True)[17:-1]:
     spell_data[spell] = 'http://dnd.su' + anchor['href']
 
 for i in spell_data:
-    print(i)
+    print(i, spell_data[i])
 
 

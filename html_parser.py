@@ -18,7 +18,10 @@ soup = BeautifulSoup(page)
 soup.prettify()
 spell_data = {}
 for anchor in soup.findAll('a', href=True, title=True)[17:-1]:
-    spell_data[anchor['title']] = 'http://dnd.su' + anchor['href']
-print(spell_data)
+    spell = anchor['title'][:anchor['title'].index('[') - 1]
+    spell_data[spell] = 'http://dnd.su' + anchor['href']
+
+for i in spell_data:
+    print(i)
 
 

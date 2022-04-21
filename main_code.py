@@ -36,7 +36,6 @@ classes = ['бард', 'варвар', 'воин', 'волшебник', 'дру
 dices = ['d2', 'd3', 'd4', 'd6', 'd8', 'd10', 'd20', 'd100']
 stats_names = ["сила", "ловкость", "телосложение", "интеллект", "мудрость", "харизма"]
 
-
 @dp.message_handler(commands=['start', 'help'])
 async def start_and_help(message: types.Message):
     await message.reply('Функции бота: \n/books - Книги по D&D \n/roll_dice - Бросить кости \n/choose_profile - Выбрать'
@@ -291,6 +290,12 @@ async def music(message: types.Message):
             await message.answer("Номер песни был введен некорректно")
     else:
         await message.answer("Если хотите получить песню, введите ее номер одним числом")
+
+@dp.message_handler(commands=['add_spell'])
+async def add_spell(message: types.message):
+    args = message.get_args()
+    if args == '':
+        await message.answer('Для того чтобы добавить заклинание напишите его название')
 
 
 @dp.message_handler(content_types=["text"])

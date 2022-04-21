@@ -302,14 +302,18 @@ async def add_spell(message: types.message):
         elif args not in spell_data:
             await message.answer('вы напишите пожалуйста правильно! :)')
         else:
-            await message.answer('Вы добавили заклинание {}'.format(args))
             do = """SELECT spells FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
             chr_spells = cur.execute(do).fetchall()
             if chr_spells[0][0] == None:
                 spell_req = ','.join([args])
+                await message.answer('Вы добавили заклинание {}'.format(args))
             else:
                 spells = chr_spells[0][0].split(',')
-                spells.append(args)
+                if args in spells:
+                    await message.answer('Ваш герой уже знает такое заклинание')
+                else:
+                    spells.append(args)
+                    await message.answer('Вы добавили заклинание {}'.format(args))
                 spell_req = ','.join(spells)
             do = """UPDATE character_profile SET spells = '{}' WHERE name = '{}'""".format(spell_req, hero(message.from_user.id))
             cur.execute(do)

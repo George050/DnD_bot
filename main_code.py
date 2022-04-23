@@ -11,7 +11,7 @@ from Docum import classes_info, books
 from Hero import hero
 from flags import flags_change
 from KeyBoard import books_kb, dices_kb, classes_kb, main_func_kb, hero_func_kb, yes_or_no_kb
-from html_parser import music_spis, spell_data
+from html_parser import music_spis, spell_data, lvl_cls_check
 
 TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
@@ -302,22 +302,36 @@ async def add_spell(message: types.message):
         elif args not in spell_data:
             await message.answer('вы напишите пожалуйста правильно! :)')
         else:
-            do = """SELECT spells FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
-            chr_spells = cur.execute(do).fetchall()
-            if chr_spells[0][0] == None:
-                spell_req = ','.join([args])
-                await message.answer('Вы добавили заклинание {}'.format(args))
-            else:
-                spells = chr_spells[0][0].split(',')
-                if args in spells:
-                    await message.answer('Ваш герой уже знает такое заклинание')
-                else:
-                    spells.append(args)
+            do = """SELECT level FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
+            lvl = cur.execute(do).fetchall()[0][0]
+            do = """SELECT class FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
+            cls = cur.execute(do).fetchall()[0][0]
+            request = lvl_cls_check(args, lvl, cls)
+            if request == True:
+                do = """SELECT spells FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
+                chr_spells = cur.execute(do).fetchall()
+                if chr_spells[0][0] == None:
+                    spell_req = ','.join([args])
                     await message.answer('Вы добавили заклинание {}'.format(args))
-                spell_req = ','.join(spells)
-            do = """UPDATE character_profile SET spells = '{}' WHERE name = '{}'""".format(spell_req, hero(message.from_user.id))
-            cur.execute(do)
-            con.commit()
+                else:
+                    spells = chr_spells[0][0].split(',')
+                    if args in spells:
+                        await message.answer('Ваш герой уже знает такое заклинание')
+                    else:
+                        spells.append(args)
+                        await message.answer('Вы добавили заклинание {}'.format(args))
+                    spell_req = ','.join(spells)
+                do = """UPDATE character_profile SET spells = '{}' WHERE name = '{}'""".format(spell_req, hero(message.from_user.id))
+                cur.execute(do)
+                con.commit()
+            else:
+                try:
+                    request = int(request)
+                    await message.answer('Извините, но у вашего персонажа слишком низкий уровень. Необходимый уровень '
+                                         '- {}. Ваш уровень - {}'.format(request, lvl))
+                except TypeError:
+                    await message.answer("Извините, но вашему классу недопступно это заклинание. \nКлассы, которым "
+                                         "доступно это заклинание: {}. \nВаш класс: {}".format(", ".join(request[1:]), cls))
 
 
 @dp.message_handler(content_types=["text"])

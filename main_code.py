@@ -40,7 +40,10 @@ async def start_and_help(message: types.Message):
     await message.reply('Функции бота: \n/books - Книги по D&D \n/roll_dice - Бросить кости \n/choose_profile - Выбрать'
                         ' профиль для изменения вашего героя или просмотра его характеристик\n/create_profile - Создать'
                         ' нового героя\n/classes - Просмотр всех классов\n'
-                        '/stop - Остановка всех функций', reply_markup=main_func_kb)
+                        '/stop - Остановка всех функций\n'
+                        '/spell - Просмотр всех заклинаний и заговоров\n'
+                        '/music - Бот отправит вам список всей музыки, которую может предложить\n'
+                        '/music_random - Бот отправит случайную музыку', reply_markup=main_func_kb)
 
 
 @dp.message_handler(commands=['books'])
@@ -258,6 +261,7 @@ async def delete_profile(message: types.Message):
 
 @dp.message_handler(commands=['music_random'])
 async def music_random(message: types.Message):
+    await message.answer("Пожалуйста, немного подождите, идет загрузка")
     music = random.choice(music_spis)
     filedata = urlopen(music[0])
     datatowrite = filedata.read()
@@ -298,7 +302,8 @@ async def add_spell(message: types.message):
         await message.answer("Чтобы изменять заклинания персонажа, выберете его при помощи /choose_profile")
     else:
         if args == '':
-            await message.answer('Для того чтобы добавить заклинание напишите его полное название')
+            await message.answer('Для того чтобы добавить заклинание напишите его полное название. Все '
+                                 'заклинания можно просмотреть при помощи команды /spell')
         elif args not in spell_data:
             await message.answer('вы напишите пожалуйста правильно! :)')
         else:
@@ -376,7 +381,7 @@ async def get_messages(message: types.Message):
     if message.text in command_names:
         hero(message.from_user.id, name=message.text[1:])
         await message.answer("Выбран герой {}\nТеперь вам доступны команды:\n"
-                             "/stats_get\n/stats_change\n/stats_roll\n/stats_lvlup\n/stats_lvldown\n/delete_profile".format(message.text[1:]), reply_markup=hero_func_kb)
+                             "/stats_get\n/stats_change\n/stats_roll\n/stats_lvlup\n/stats_lvldown\n/add_spell\n/delete_profile".format(message.text[1:]), reply_markup=hero_func_kb)
     elif dice_flag:
         text = message.text.split(' ')
         try:
@@ -419,3 +424,5 @@ if __name__ == "__main__":
     # Запуск бота
     executor.start_polling(dp, skip_updates=True)
 
+# надо написать def delete_spell
+# дописать stats_get с уровнем и заклинаниями

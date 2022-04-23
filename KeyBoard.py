@@ -17,12 +17,14 @@ classes_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 for i in classes:
     classes_kb.add(KeyboardButton(i))
 
-main_func = ['/books', '/roll_dice', '/choose_profile', '/create_profile', '/classes', '/stop']
+main_func = ['/books', '/roll_dice', '/choose_profile', '/create_profile', '/classes', '/stop', '/spell',
+             '/music', '/music_random']
 main_func_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 for i in main_func:
     main_func_kb.add(i)
 
-hero_func = ['/stats_get', '/stats_change', '/stats_roll', '/stats_lvlup', '/stats_lvldown', '/delete_profile', '/stop']
+hero_func = ['/stats_get', '/stats_change', '/stats_roll', '/stats_lvlup', '/stats_lvldown', '/add_spell',
+             '/delete_profile', '/stop']
 hero_func_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 for i in hero_func:
     hero_func_kb.add(i)

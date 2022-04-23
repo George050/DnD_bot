@@ -1,5 +1,6 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from Docum import books
+from html_parser import spell_data
 
 books_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 for i in books:
@@ -28,3 +29,10 @@ for i in hero_func:
 
 yes_or_no_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 yes_or_no_kb.add(KeyboardButton("Да"), KeyboardButton("Нет"))
+
+spells_page_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+pages = len(spell_data) / 50
+if pages >= len(spell_data) // 50:
+    pages = int(pages) + 1
+for i in range(pages):
+    spells_page_kb.add(KeyboardButton("/spell Страница {}".format(i + 1)))

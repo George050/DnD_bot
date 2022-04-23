@@ -16,11 +16,13 @@ page = urlopen('http://dnd.su/spells/').read()
 soup = BeautifulSoup(page)
 soup.prettify()
 spell_data = {}
+spell_spis = []
 for anchor in soup.findAll('a', href=True, title=True)[17:-1]:
     spell = anchor['title'][:anchor['title'].index('[') - 1]
     if spell[-1] == " ":
         spell = spell[:-1]
     spell_data[spell] = 'http://dnd.su' + anchor['href']
+    spell_spis.append(spell)
 
 for i in spell_data:
     print(i, spell_data[i])

@@ -10,8 +10,8 @@ from dices_code import Dices
 from Docum import classes_info, books
 from Hero import hero
 from flags import flags_change
-from KeyBoard import books_kb, dices_kb, classes_kb, main_func_kb, hero_func_kb, yes_or_no_kb
-from html_parser import music_spis, spell_data, lvl_cls_check
+from KeyBoard import books_kb, dices_kb, classes_kb, main_func_kb, hero_func_kb, yes_or_no_kb, spells_page_kb, pages
+from html_parser import music_spis, spell_data, spell_spis, lvl_cls_check
 
 TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
@@ -331,7 +331,42 @@ async def add_spell(message: types.message):
                                          '- {}. Ваш уровень - {}'.format(request, lvl))
                 except TypeError:
                     await message.answer("Извините, но вашему классу недопступно это заклинание. \nКлассы, которым "
-                                         "доступно это заклинание: {}. \nВаш класс: {}".format(", ".join(request[1:]), cls))
+                                         "доступно это заклинание: {}.\nВаш класс: {}".format(", ".join(request[1:]), cls))
+
+
+@dp.message_handler(commands=['spell'])
+async def spell_finder(message: types.Message):
+    args = message.get_args()
+    if args.split() == []:
+        await message.answer("Чтобы получить список заклинаний, выберите кнопку со страницей или введите несколько "
+                             "символов после команды /spell, и бот выдаст вам все заклинания "
+                             "с этими символами в названии", reply_markup=spells_page_kb)
+    elif args.split()[0].lower() == 'страница':
+        args = args.split()
+        if int(args[1]) > 0:
+            if int(args[1]) < pages:
+                await message.answer('\n'.join(spell_spis[(int(args[1]) - 1) * 50: int(args[1]) * 50 - 1]))
+            elif int(args[1]) == pages:
+                await message.answer('\n'.join(spell_spis[(int(args[1]) - 1) * 50:]))
+            else:
+                await message.answer("Такой страницы нет")
+        else:
+            await message.answer("Такой страницы нет")
+    else:
+        request = []
+        for i in spell_spis:
+            if args in i.lower():
+                request.append(i)
+        if len(request) == 0:
+            await message.answer("Извините, но по данному запросу никаких заклинаний не найдено")
+        elif len(request) == 1:
+            await message.answer('{}\n{}'.format(request[0], spell_data[request[0]]))
+        elif len(request) <= 50:
+            await message.answer('\n'.join(request))
+        elif len(request) > 50:
+            request = request[:49]
+            request.append('...')
+            await message.answer('\n'.join(request))
 
 
 @dp.message_handler(content_types=["text"])

@@ -62,7 +62,8 @@ async def roll_dice(message: types.Message):
 
 @dp.message_handler(commands=['stop'])
 async def stop(message: types.Message):
-    dice_flag, delete_flag = flags_change(message.from_user.id)['dice_flag'], flags_change(message.from_user.id)['delete_flag']
+    dice_flag, delete_flag = flags_change(message.from_user.id)['dice_flag'], \
+                             flags_change(message.from_user.id)['delete_flag']
     if dice_flag:
         flags_change(message.from_user.id, di=False)
         await message.reply('Была прекращена функция /roll_dice')
@@ -141,12 +142,16 @@ async def classes_list(message: types.Message):
     await message.answer("Введите название любого класса, чтобы получить информацию о нем")
 
 
-@dp.message_handler(commands=["stats_get"])
-async def stats_get(message: types.Message):
+@dp.message_handler(commands=["hero_info"])
+async def hero_info(message: types.Message):
     if hero(message.from_user.id) == "":
         await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
     else:
         answer = []
+        request = ''
+        do = """SELECT * FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
+        info = cur.execute(do).fetchall()[0]
+        request += "Имя: {}\nУровень: {}\nКласс: {}\nРаса: {}\n\n".format(info[0], info[3], info[1], info[2])
         do = """SELECT stats FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
         if cur.execute(do).fetchall()[0][0] != None:
             stats = cur.execute(do).fetchall()[0][0].split()
@@ -155,11 +160,14 @@ async def stats_get(message: types.Message):
                     answer.append("{} = {}(+{})".format(stats_names[i], stats[i], ((int(stats[i]) - 10) // 2)))
                 else:
                     answer.append("{} = {}({})".format(stats_names[i], stats[i], ((int(stats[i]) - 10) // 2)))
-            await message.answer("\n".join(answer))
+            request += "\n".join(answer)
         else:
-            await message.answer("У вашего персонажа не записаны характеристики, вы можете сделать это при "
-                 
-                                 "помощи\n/stats_roll")
+            request += "У вашего персонажа не записаны характеристики, вы можете сделать это при помощи\n/stats_roll"
+        request += '\n\nЗаклинания и Заговоры:'
+        spells = info[5].split(',')
+        for i in spells:
+            request += '\n{}:\n{}'.format(i, spell_data[i])
+        await message.answer(request)
 
 
 @dp.message_handler(commands=["stats_change"])
@@ -189,14 +197,17 @@ async def stats_change(message: types.Message):
                     elif int(stats[stats_names.index(text[1])]) <= 0:
                         await message.answer("Параметр не может быть ниже 1")
                     else:
-                        do = """UPDATE character_profile SET stats = '{}' WHERE name = '{}'""".format(" ".join(stats), hero(message.from_user.id))
+                        do = """UPDATE character_profile SET stats = '{}'
+                         WHERE name = '{}'""".format(" ".join(stats), hero(message.from_user.id))
                         cur.execute(do)
                         if bonus_number >= 0:
                             await message.answer("Параметр '{}' увеличен на {}\n{} = "
-                                                 "{}".format(text[1], text[2], text[1], stats[stats_names.index(text[1])]))
+                                                 "{}".format(text[1], text[2], text[1],
+                                                             stats[stats_names.index(text[1])]))
                         else:
                             await message.answer("Параметр '{}' уменьшен на {}\n{} = "
-                                                 "{}".format(text[1], text[2], text[1], stats[stats_names.index(text[1])]))
+                                                 "{}".format(text[1], text[2], text[1],
+                                                             stats[stats_names.index(text[1])]))
                         con.commit()
         else:
             await message.answer("У вашего персонажа не записаны характеристики, вы можете сделать это при "
@@ -220,7 +231,8 @@ async def stats_roll(message: types.Message):
                 answer.append("{} = {}({})".format(stats_names[i], stats[i][0], stats[i][1]))
         await message.answer("\n".join(answer))
         stats_in_db = " ".join(str(i[0]) for i in stats)
-        do = """UPDATE character_profile set stats = '{}' WHERE name = '{}'""".format(stats_in_db, hero(message.from_user.id))
+        do = """UPDATE character_profile set stats = '{}' 
+        WHERE name = '{}'""".format(stats_in_db, hero(message.from_user.id))
         cur.execute(do)
         con.commit()
 
@@ -326,7 +338,8 @@ async def add_spell(message: types.message):
                         spells.append(args)
                         await message.answer('Вы добавили заклинание {}'.format(args))
                     spell_req = ','.join(spells)
-                do = """UPDATE character_profile SET spells = '{}' WHERE name = '{}'""".format(spell_req, hero(message.from_user.id))
+                do = """UPDATE character_profile SET spells = '{}'
+                 WHERE name = '{}'""".format(spell_req, hero(message.from_user.id))
                 cur.execute(do)
                 con.commit()
             else:
@@ -336,7 +349,8 @@ async def add_spell(message: types.message):
                                          '- {}. Ваш уровень - {}'.format(request, lvl))
                 except TypeError:
                     await message.answer("Извините, но вашему классу недопступно это заклинание. \nКлассы, которым "
-                                         "доступно это заклинание: {}.\nВаш класс: {}".format(", ".join(request[1:]), cls))
+                                         "доступно это заклинание: {}.\nВаш класс: {}".format(", ".join(request[1:]),
+                                                                                              cls))
 
 
 @dp.message_handler(commands=['spell'])
@@ -377,11 +391,14 @@ async def spell_finder(message: types.Message):
 @dp.message_handler(content_types=["text"])
 async def get_messages(message: types.Message):
     global current_dice, names, command_names
-    dice_flag, delete_flag = flags_change(message.from_user.id)['dice_flag'], flags_change(message.from_user.id)['delete_flag']
+    dice_flag, delete_flag = flags_change(message.from_user.id)['dice_flag'], \
+                             flags_change(message.from_user.id)['delete_flag']
     if message.text in command_names:
         hero(message.from_user.id, name=message.text[1:])
         await message.answer("Выбран герой {}\nТеперь вам доступны команды:\n"
-                             "/stats_get\n/stats_change\n/stats_roll\n/stats_lvlup\n/stats_lvldown\n/add_spell\n/delete_profile".format(message.text[1:]), reply_markup=hero_func_kb)
+                             "/hero_info\n/stats_change\n/stats_roll\n/stats_lvlup\n"
+                             "/stats_lvldown\n/add_spell\n"
+                             "/delete_profile".format(message.text[1:]), reply_markup=hero_func_kb)
     elif dice_flag:
         text = message.text.split(' ')
         try:
@@ -425,4 +442,3 @@ if __name__ == "__main__":
     executor.start_polling(dp, skip_updates=True)
 
 # надо написать def delete_spell
-# дописать stats_get с уровнем и заклинаниями

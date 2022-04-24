@@ -24,9 +24,6 @@ for anchor in soup.findAll('a', href=True, title=True)[17:-1]:
     spell_data[spell] = 'http://dnd.su' + anchor['href']
     spell_spis.append(spell)
 
-for i in spell_data:
-    print(i, spell_data[i])
-
 
 def lvl_cls_check(spell, hero_level, hero_class):
     url = spell_data[spell]

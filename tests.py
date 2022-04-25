@@ -1,7 +1,3 @@
-import requests
-from bs4 import BeautifulSoup
-
-url = 'https://musify.club/release/divinity-original-sin-2-ost-2017-922827'
-response = requests.get(url)
-soup = BeautifulSoup(response.text, 'lxml')
-print(soup)
+s = 'ytr y rh ry rn et hte hefg'.split()
+s.pop(0)
+print(s)

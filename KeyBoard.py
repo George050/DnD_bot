@@ -24,7 +24,7 @@ for i in main_func:
     main_func_kb.add(i)
 
 hero_func = ['/hero_info', '/stats_change', '/stats_roll', '/stats_lvlup', '/stats_lvldown', '/add_spell',
-             '/delete_profile', '/stop']
+             'delete_spell', '/delete_profile', '/stop']
 hero_func_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 for i in hero_func:
     hero_func_kb.add(i)

@@ -35,15 +35,16 @@ classes = ['бард', 'варвар', 'воин', 'волшебник', 'дру
 dices = ['d2', 'd3', 'd4', 'd6', 'd8', 'd10', 'd20', 'd100']
 stats_names = ["сила", "ловкость", "телосложение", "интеллект", "мудрость", "харизма"]
 
+
 @dp.message_handler(commands=['start', 'help'])
 async def start_and_help(message: types.Message):
     await message.reply('Функции бота: \n/books - Книги по D&D \n/roll_dice - Бросить кости \n/choose_profile - Выбрать'
                         ' профиль для изменения вашего героя или просмотра его характеристик\n/create_profile - Создать'
                         ' нового героя\n/classes - Просмотр всех классов\n'
-                        '/stop - Остановка всех функций\n'
                         '/spell - Просмотр всех заклинаний и заговоров\n'
                         '/music - Бот отправит вам список всей музыки, которую может предложить\n'
-                        '/music_random - Бот отправит случайную музыку', reply_markup=main_func_kb)
+                        '/music_random - Бот отправит случайную музыку\n'
+                        '/stop - Остановка всех функций', reply_markup=main_func_kb)
 
 
 @dp.message_handler(commands=['books'])
@@ -164,9 +165,12 @@ async def hero_info(message: types.Message):
         else:
             request += "У вашего персонажа не записаны характеристики, вы можете сделать это при помощи\n/stats_roll"
         request += '\n\nЗаклинания и Заговоры:'
-        spells = info[5].split(',')
-        for i in spells:
-            request += '\n{}:\n{}'.format(i, spell_data[i])
+        if info[5] is None or info[5] == "":
+            request += "У вашего персонажа нет заклинаний или заговоров"
+        else:
+            spells = info[5].split(',')
+            for i in spells:
+                request += '\n{}:\n{}'.format(i, spell_data[i])
         await message.answer(request)
 
 
@@ -345,12 +349,49 @@ async def add_spell(message: types.message):
             else:
                 try:
                     request = int(request)
-                    await message.answer('Извините, но у вашего персонажа слишком низкий уровень. Необходимый уровень '
-                                         '- {}. Ваш уровень - {}'.format(request, lvl))
+                    await message.answer('Извините, но у вашего персонажа слишком низкий уровень.\nНеобходимый уровень '
+                                         '- {}. \nВаш уровень - {}'.format(request, lvl))
                 except TypeError:
                     await message.answer("Извините, но вашему классу недопступно это заклинание. \nКлассы, которым "
                                          "доступно это заклинание: {}.\nВаш класс: {}".format(", ".join(request[1:]),
                                                                                               cls))
+
+
+@dp.message_handler(commands=['delete_spell'])
+async def delete_spell(message: types.Message):
+    if hero(message.from_user.id) == '':
+        await message.answer("Чтобы изменять заклинания персонажа, выберете его при помощи /choose_profile")
+    else:
+        args = message.get_args()
+        request = ''
+        do = """SELECT spells FROM character_profile WHERE name = '{}'""".format(hero(message.from_user.id))
+        spells = cur.execute(do).fetchall()[0][0]
+        if args == '':
+            if spells is None or spells == "":
+                request += "У вашего персонажа уже нет заклинаний или заговоров"
+            else:
+                spells = spells.split(',')
+                for i in range(len(spells)):
+                    request += "{} - {}\n".format(i + 1, spells[i])
+                request += "\nЧтобы удалить заклинание или заговор введите /delete_spell и номер" \
+                           "заклинания или заговора"
+        else:
+            if spells is None or spells == "":
+                request += "У вашего персонажа уже нет заклинаний или заговоров"
+            else:
+                spells = spells.split(',')
+                try:
+                    nnnn = spells[int(args)]
+                    spells.pop(int(args) - 1)
+                    spell_req = ','.join(spells)
+                    do = """UPDATE character_profile SET spells = '{}'
+                                 WHERE name = '{}'""".format(spell_req, hero(message.from_user.id))
+                    cur.execute(do)
+                    con.commit()
+                    request += "Ваш персонаж забыл заклинание/заговор:\n{}".format(nnnn)
+                except Exception:
+                    request += "Номер заклинания/заговора ввведен неправильно"
+        await message.answer(request)
 
 
 @dp.message_handler(commands=['spell'])
@@ -397,7 +438,7 @@ async def get_messages(message: types.Message):
         hero(message.from_user.id, name=message.text[1:])
         await message.answer("Выбран герой {}\nТеперь вам доступны команды:\n"
                              "/hero_info\n/stats_change\n/stats_roll\n/stats_lvlup\n"
-                             "/stats_lvldown\n/add_spell\n"
+                             "/stats_lvldown\n/add_spell\n/delete_spell\n"
                              "/delete_profile".format(message.text[1:]), reply_markup=hero_func_kb)
     elif dice_flag:
         text = message.text.split(' ')
@@ -441,4 +482,5 @@ if __name__ == "__main__":
     # Запуск бота
     executor.start_polling(dp, skip_updates=True)
 
-# надо написать def delete_spell
+# hero_info - надо дописать исключения для ситуаций, когда заклинаний
+# у героя нет, вместо заклинаний может быть "" или None, надо поставить на эти значения исключения

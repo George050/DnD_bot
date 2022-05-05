@@ -1,7 +1,7 @@
-flags = {}
+flags = {}  # Словрь для хранения флагов для определнных действий пользователей
 
 
-def flags_change(id, di='', de=''):
+def flags_change(id, di='', de=''):  # Функция для изменения словаря с флагами
     global flags
     if di == '' and de == '':
         if id in flags:

@@ -8,6 +8,7 @@ class Dices:
         self.bonus = bonus
 
     def get_roll(self):
+        # получние результата броска кубика
         dice_number = int(self.dice[2:])
         if "-" in self.bonus:
             bonus_number = -(int(self.bonus[1:]))
@@ -34,7 +35,9 @@ class Dices:
         all_numbers += "\n<u>{}</u>".format(result)
         return all_numbers
 
+
     def create_stats(self):
+        # создание характеристик персонажа
         res = []
         for i in range(4):
             res.append(random.randint(1, 6))

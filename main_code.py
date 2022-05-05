@@ -1,4 +1,4 @@
-import random
+import random  # Импорт всех библиотек и необходимых функций
 import sqlite3
 
 from urllib.request import urlopen
@@ -13,7 +13,7 @@ from flags import flags_change
 from KeyBoard import books_kb, dices_kb, classes_kb, main_func_kb, hero_func_kb, yes_or_no_kb, spells_page_kb, pages
 from html_parser import music_spis, spell_data, spell_spis, lvl_cls_check
 
-TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"
+TOKEN = "5226221353:AAHIkDyNlZEGVuB6C76w9Iqp9prPYl72HH8"  # Подключаемся к боту
 bot = Bot(token=TOKEN, parse_mode=types.ParseMode.HTML)
 dp = Dispatcher(bot)
 
@@ -26,7 +26,7 @@ command_names = ["-"+(i[0]) for i in names]
 names_kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 for i in command_names:
     names_kb.add(KeyboardButton(i))
-
+# создание кнопок с именами персонажей
 
 current_dice = ''
 classes = ['бард', 'варвар', 'воин', 'волшебник', 'друид', 'жрец', 'изобретатель', 'колдун', 'монах', 'паладин', 'плут',
@@ -38,6 +38,7 @@ stats_names = ["сила", "ловкость", "телосложение", "ин
 
 @dp.message_handler(commands=['start', 'help'])
 async def start_and_help(message: types.Message):
+    # функция для вывода всех команд бота
     await message.reply('Функции бота: \n/books - Книги по D&D \n/roll_dice - Бросить кости \n/choose_profile - Выбрать'
                         ' профиль для изменения вашего героя или просмотра его характеристик\n/create_profile - Создать'
                         ' нового героя\n/classes - Просмотр всех классов\n'
@@ -49,6 +50,7 @@ async def start_and_help(message: types.Message):
 
 @dp.message_handler(commands=['books'])
 async def send_books(message: types.Message):
+    # функция для отправки справочников
     await message.answer('Напишите название книги, которую хотите получить: \n'
                          'книга игрока \n'
                          'руководство мастера \n'
@@ -58,11 +60,23 @@ async def send_books(message: types.Message):
 
 @dp.message_handler(commands=['roll_dice'])
 async def roll_dice(message: types.Message):
+    # выбор кубика
     await message.answer('Выберите кость: \n/d2\n/d3\n/d4\n/d6\n/d8\n/d10\n/d20\n/d100', reply_markup=dices_kb)
+
+
+@dp.message_handler(commands=dices)
+async def get_quantity(message: types.Message):
+    # вывод значений броска
+    global current_dice
+    flags_change(message.from_user.id)
+    flags_change(message.from_user.id, di=True)
+    current_dice = message.text
+    await message.answer('Укажите количество бросков и бонус к броску \nПример:\n 3 -5\n 1 +3\n 8 0')
 
 
 @dp.message_handler(commands=['stop'])
 async def stop(message: types.Message):
+    # функция для остановки всех остальных функций
     dice_flag, delete_flag = flags_change(message.from_user.id)['dice_flag'], \
                              flags_change(message.from_user.id)['delete_flag']
     if dice_flag:
@@ -73,17 +87,9 @@ async def stop(message: types.Message):
         await message.reply('Была прекращена функция /delete_flag')
 
 
-@dp.message_handler(commands=dices)
-async def get_quantity(message: types.Message):
-    global current_dice
-    flags_change(message.from_user.id)
-    flags_change(message.from_user.id, di=True)
-    current_dice = message.text
-    await message.answer('Укажите количество бросков и бонус к броску \nПример:\n 3 -5\n 1 +3\n 8 0')
-
-
 @dp.message_handler(commands=["choose_profile"])
 async def choose_profile(message: types.Message):
+    # выбор имеющихся в базе данных персонажей
     global names_kb
     do = """SELECT * FROM character_profile"""
     heroes = cur.execute(do).fetchall()
@@ -102,6 +108,7 @@ async def choose_profile(message: types.Message):
 
 @dp.message_handler(commands=["create_profile"])
 async def create_profile(message: types.Message):
+    # создание персонажа и запись в базу данных
     global names, command_names, names_kb
     do = """SELECT name FROM character_profile"""
     names = cur.execute(do).fetchall()
@@ -139,12 +146,14 @@ async def create_profile(message: types.Message):
 
 @dp.message_handler(commands=["classes"])
 async def classes_list(message: types.Message):
+    # вывод всех классов
     await message.answer("Существующие классы: \n{}".format("\n".join(classes)), reply_markup=classes_kb)
     await message.answer("Введите название любого класса, чтобы получить информацию о нем")
 
 
 @dp.message_handler(commands=["hero_info"])
 async def hero_info(message: types.Message):
+    # вывод информации о герое
     if hero(message.from_user.id) == "":
         await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
     else:
@@ -176,6 +185,7 @@ async def hero_info(message: types.Message):
 
 @dp.message_handler(commands=["stats_change"])
 async def stats_change(message: types.Message):
+    # функция для изменения характеристик выбранного персонажа
     if hero(message.from_user.id) == "":
         await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
     else:
@@ -220,6 +230,7 @@ async def stats_change(message: types.Message):
 
 @dp.message_handler(commands=["stats_roll"])
 async def stats_roll(message: types.Message):
+    # случайным образом выбирает значение для характеристик персонажа
     if hero(message.from_user.id) == "":
         await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
     else:
@@ -243,6 +254,7 @@ async def stats_roll(message: types.Message):
 
 @dp.message_handler(commands=["stats_lvlup", "stats_lvldown"])
 async def level_up_down(message: types.Message):
+    # функция для повышения или понижения уровня персонажа
     if hero(message.from_user.id) == "":
         await message.answer("Чтобы изменять статы персонажа, выберете его при помощи /choose_profile")
     else:
@@ -271,12 +283,14 @@ async def level_up_down(message: types.Message):
 
 @dp.message_handler(commands=['delete_profile'])
 async def delete_profile(message: types.Message):
+    # удаление персонажа
     await message.reply("Вы точно хотите удалить этот профиль?\nДа или Нет", reply_markup=yes_or_no_kb)
     flags_change(message.from_user.id, de=True)
 
 
 @dp.message_handler(commands=['music_random'])
 async def music_random(message: types.Message):
+    # отправка случайного трека
     await message.answer("Пожалуйста, немного подождите, идет загрузка")
     music = random.choice(music_spis)
     filedata = urlopen(music[0])
@@ -288,6 +302,7 @@ async def music_random(message: types.Message):
 
 @dp.message_handler(commands=['music'])
 async def music(message: types.Message):
+    # отправка выбранной музыки
     args = message.get_args().split()
     if args == []:
         answer = ""
@@ -313,6 +328,7 @@ async def music(message: types.Message):
 
 @dp.message_handler(commands=['add_spell'])
 async def add_spell(message: types.message):
+    # добавление заклинаний персонажу
     args = message.get_args().capitalize()
     if hero(message.from_user.id) == '':
         await message.answer("Чтобы изменять заклинания персонажа, выберете его при помощи /choose_profile")
@@ -359,6 +375,7 @@ async def add_spell(message: types.message):
 
 @dp.message_handler(commands=['delete_spell'])
 async def delete_spell(message: types.Message):
+    # удаление заклинаний
     if hero(message.from_user.id) == '':
         await message.answer("Чтобы изменять заклинания персонажа, выберете его при помощи /choose_profile")
     else:
@@ -396,6 +413,7 @@ async def delete_spell(message: types.Message):
 
 @dp.message_handler(commands=['spell'])
 async def spell_finder(message: types.Message):
+    # функция для поиска заклинаний
     args = message.get_args()
     if args.split() == []:
         await message.answer("Чтобы получить список заклинаний, выберите кнопку со страницей или введите несколько "
@@ -415,7 +433,7 @@ async def spell_finder(message: types.Message):
     else:
         request = []
         for i in spell_spis:
-            if args in i.lower():
+            if args.lower() in i.lower():
                 request.append(i)
         if len(request) == 0:
             await message.answer("Извините, но по данному запросу никаких заклинаний не найдено")
@@ -431,6 +449,7 @@ async def spell_finder(message: types.Message):
 
 @dp.message_handler(content_types=["text"])
 async def get_messages(message: types.Message):
+    # взаимодействие с вводом пользователя
     global current_dice, names, command_names
     dice_flag, delete_flag = flags_change(message.from_user.id)['dice_flag'], \
                              flags_change(message.from_user.id)['delete_flag']
@@ -482,5 +501,3 @@ if __name__ == "__main__":
     # Запуск бота
     executor.start_polling(dp, skip_updates=True)
 
-# hero_info - надо дописать исключения для ситуаций, когда заклинаний
-# у героя нет, вместо заклинаний может быть "" или None, надо поставить на эти значения исключения
